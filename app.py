@@ -167,16 +167,23 @@ def fetch_channel(_youtube, for_username=None, channel_id=None):
 @st.cache_data(ttl=600)
 def fetch_videos_for_channel(_youtube, channel_id, max_results=50):
     videos = []
-    req = _youtube.search().list(part="snippet", channelId=channel_id, maxResults=50, order="date", type="video")
-    res = req.execute()
-    for item in res.get("items", []):
-        vid = {
-            "videoId": item["id"]["videoId"],
-            "title": item["snippet"]["title"],
-            "publishedAt": item["snippet"]["publishedAt"],
-            "thumbnail": item["snippet"]["thumbnails"]["high"]["url"]
-        }
-        videos.append(vid)
+    try:
+        req = _youtube.search().list(part="snippet", channelId=channel_id, maxResults=50, order="date", type="video")
+        res = req.execute()
+        for item in res.get("items", []):
+            vid = {
+                "videoId": item["id"]["videoId"],
+                "title": item["snippet"]["title"],
+                "publishedAt": item["snippet"]["publishedAt"],
+                "thumbnail": item["snippet"]["thumbnails"]["high"]["url"]
+            }
+            videos.append(vid)
+    except Exception as e:
+        if "quotaExceeded" in str(e):
+            st.error("🚨 YouTube API Quota Exceeded! You have used up your free daily Data API requests (10,000 units). Please wait until midnight PT for a reset, or create a new API key in Google Cloud Console.")
+            st.stop()
+        else:
+            st.error(f"Error fetching videos: {e}")
     # optionally page through nextPageToken if you want more than 50 (left as exercise)
     return videos
 
